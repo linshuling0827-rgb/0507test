@@ -3,136 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>會員資料查詢系統</title>
+    <title>訂單資料查詢</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
         body {
-            font-family: 'Noto Sans TC', sans-serif;
+            font-family: 'Noto+Sans+TC', sans-serif;
             background-color: #f3f4f6;
         }
         .loader {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 8px;
+            border-top-color: #3498db;
+            animation: spinner 1.5s linear infinite;
         }
-        @keyframes spin {
+        @keyframes spinner {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .hidden { display: none; }
     </style>
 </head>
 <body class="p-4 md:p-8">
+
     <div class="max-w-4xl mx-auto">
-        <!-- 查詢卡片 -->
-        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
-            <h1 class="text-2xl font-bold text-gray-800 mb-6">會員資料查詢</h1>
-            
+        <!-- 標題區 -->
+        <div class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-800">訂單系統查詢介面</h1>
+            <p class="text-gray-600 mt-2">請輸入會員姓名以獲取最新訂單資訊</p>
+        </div>
+
+        <!-- 查詢表單 -->
+        <div class="bg-white p-6 rounded-xl shadow-md mb-8">
             <div class="flex flex-col md:flex-row gap-4">
                 <div class="flex-grow">
-                    <label for="username" class="block text-sm font-medium text-gray-700 mb-1">請輸入使用者名稱</label>
-                    <input type="text" id="username" placeholder="例如：陳美玲" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition">
+                    <label for="userName" class="block text-sm font-medium text-gray-700 mb-1">使用者名稱</label>
+                    <input type="text" id="userName" placeholder="例如：黃文雄" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                 </div>
                 <div class="flex items-end">
-                    <button id="submitBtn" 
-                        class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded-lg transition transform active:scale-95 flex items-center justify-center">
-                        <span id="btnLoader" class="loader hidden"></span>
+                    <button id="searchBtn" class="w-full md:w-auto px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm flex items-center justify-center">
                         <span id="btnText">送出查詢</span>
+                        <!-- 載入中動畫 -->
+                        <div id="loadingIcon" class="hidden loader w-5 h-5 border-2 border-white border-t-transparent rounded-full ml-2"></div>
                     </button>
                 </div>
             </div>
-            
-            <div id="messageBox" class="mt-4 p-3 rounded-lg hidden"></div>
         </div>
 
-        <!-- 結果表格 -->
-        <div id="resultContainer" class="bg-white rounded-xl shadow-md overflow-hidden hidden">
-            <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                <h2 class="font-semibold text-gray-700">查詢結果</h2>
-                <span id="rowCount" class="text-xs bg-blue-100 text-blue-700 py-1 px-2 rounded-full font-medium"></span>
-            </div>
+        <!-- 訊息提示區 -->
+        <div id="messageBox" class="hidden mb-6 p-4 rounded-lg"></div>
+
+        <!-- 查詢結果表格 -->
+        <div id="resultContainer" class="hidden bg-white rounded-xl shadow-md overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600 text-sm uppercase">
-                            <th class="px-6 py-4 font-bold border-b">會員ID</th>
-                            <th class="px-6 py-4 font-bold border-b">姓名</th>
-                            <th class="px-6 py-4 font-bold border-b">英文名</th>
-                            <th class="px-6 py-4 font-bold border-b">性別</th>
-                            <th class="px-6 py-4 font-bold border-b">年齡</th>
-                            <th class="px-6 py-4 font-bold border-b">電話</th>
-                            <th class="px-6 py-4 font-bold border-b">地址</th>
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th class="px-6 py-4 text-sm font-bold text-gray-700">訂單編號</th>
+                            <th class="px-6 py-4 text-sm font-bold text-gray-700">會員姓名</th>
+                            <th class="px-6 py-4 text-sm font-bold text-gray-700">購買商品</th>
+                            <th class="px-6 py-4 text-sm font-bold text-gray-700">購買金額</th>
+                            <th class="px-6 py-4 text-sm font-bold text-gray-700">交易時間</th>
                         </tr>
                     </thead>
-                    <tbody id="resultBody" class="text-gray-700">
-                        <!-- 資料將插入於此 -->
+                    <tbody id="resultBody" class="divide-y divide-gray-100">
+                        <!-- 資料將由 JS 插入 -->
                     </tbody>
                 </table>
             </div>
         </div>
-        
-        <!-- 初始狀態提示 -->
-        <div id="emptyState" class="text-center py-20 text-gray-400">
-            <svg class="w-16 h-16 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-            <p>請輸入名稱並點擊按鈕開始查詢</p>
-        </div>
     </div>
 
     <script>
-        const WEBHOOK_URL = 'https://odtxiesb.roamerhost.com/webhook/bff377c7-09bc-4f3e-8a99-e797084ad30d';
-        
-        const usernameInput = document.getElementById('username');
-        const submitBtn = document.getElementById('submitBtn');
-        const btnLoader = document.getElementById('btnLoader');
+        const searchBtn = document.getElementById('searchBtn');
+        const userNameInput = document.getElementById('userName');
+        const loadingIcon = document.getElementById('loadingIcon');
         const btnText = document.getElementById('btnText');
+        const messageBox = document.getElementById('messageBox');
         const resultContainer = document.getElementById('resultContainer');
         const resultBody = document.getElementById('resultBody');
-        const messageBox = document.getElementById('messageBox');
-        const emptyState = document.getElementById('emptyState');
-        const rowCount = document.getElementById('rowCount');
 
-        // 顯示訊息函式
-        function showMessage(text, type = 'error') {
-            messageBox.textContent = text;
-            messageBox.className = `mt-4 p-3 rounded-lg ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
-            messageBox.classList.remove('hidden');
-        }
+        const WEBHOOK_URL = 'https://ejagf9pp.roamerhost.com/webhook/ec33a6e9-5571-47e3-a674-a1c6b65fa661';
 
-        // 查詢邏輯
         async function performSearch() {
-            const username = usernameInput.value.trim();
+            const name = userNameInput.value.trim();
             
-            if (!username) {
-                showMessage('請輸入使用者名稱');
+            if (!name) {
+                showMessage('請輸入姓名後再進行查詢', 'error');
                 return;
             }
 
-            // UI 狀態更新
-            messageBox.classList.add('hidden');
-            submitBtn.disabled = true;
-            btnLoader.classList.remove('hidden');
-            btnText.textContent = '查詢中...';
+            // UI 狀態切換：載入中
+            setLoading(true);
+            hideResult();
+            hideMessage();
 
             try {
                 const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        username: username,
-                        timestamp: new Date().toISOString()
-                    })
+                    body: JSON.stringify({ name: name })
                 });
 
                 if (!response.ok) {
@@ -140,67 +110,93 @@
                 }
 
                 const data = await response.json();
-                displayResults(data);
+                renderResult(data);
+                showMessage('查詢成功', 'success');
 
             } catch (error) {
-                console.error('Fetch Error:', error);
-                showMessage(`查詢失敗：${error.message}`);
-                resultContainer.classList.add('hidden');
-                emptyState.classList.remove('hidden');
+                console.error('Fetch error:', error);
+                showMessage('查詢失敗：' + error.message, 'error');
             } finally {
-                submitBtn.disabled = false;
-                btnLoader.classList.add('hidden');
-                btnText.textContent = '送出查詢';
+                setLoading(false);
             }
         }
 
-        // 渲染結果表格
-        function displayResults(data) {
+        function renderResult(data) {
             // 清空舊內容
             resultBody.innerHTML = '';
-            
-            // 判斷回傳資料是否為陣列或單一物件
-            const dataList = Array.isArray(data) ? data : [data];
-            
-            if (dataList.length === 0 || !dataList[0].會員ID) {
-                showMessage('查無相關資料');
-                resultContainer.classList.add('hidden');
-                emptyState.classList.remove('hidden');
+
+            // 如果回傳的是單一物件，轉成陣列處理；如果是陣列則直接遍歷
+            const items = Array.isArray(data) ? data : [data];
+
+            if (items.length === 0 || !items[0]["訂單編號"]) {
+                showMessage('找不到相關訂單資料', 'warning');
                 return;
             }
 
-            dataList.forEach(item => {
+            items.forEach(item => {
                 const row = document.createElement('tr');
-                row.className = 'hover:bg-blue-50 transition border-b border-gray-100';
+                row.className = 'hover:bg-blue-50 transition-colors';
                 
+                // 格式化金額
+                const formattedPrice = new Intl.NumberFormat('zh-TW', { 
+                    style: 'currency', 
+                    currency: 'TWD',
+                    maximumFractionDigits: 0 
+                }).format(item["購買金額"]);
+
                 row.innerHTML = `
-                    <td class="px-6 py-4 font-mono text-sm text-blue-600">${item.會員ID || '-'}</td>
-                    <td class="px-6 py-4 font-medium">${item.姓名 || '-'}</td>
-                    <td class="px-6 py-4">${item.英文名 || '-'}</td>
-                    <td class="px-6 py-4">
-                        <span class="${item.性別 === '男' ? 'text-blue-500' : 'text-pink-500'} font-bold">
-                            ${item.性別 || '-'}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4">${item.年齡 || '-'} 歲</td>
-                    <td class="px-6 py-4 text-sm">${item.電話 || '-'}</td>
-                    <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title="${item.地址}">
-                        ${item.地址 || '-'}
-                    </td>
+                    <td class="px-6 py-4 text-sm font-medium text-blue-600">${item["訂單編號"] || '無'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">${item["會員姓名"] || '無'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">${item["購買商品"] || '無'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700 font-bold">${formattedPrice}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${item["交易時間"] || '無'}</td>
                 `;
                 resultBody.appendChild(row);
             });
 
-            // 顯示結果面板
-            rowCount.textContent = `找到 ${dataList.length} 筆資料`;
             resultContainer.classList.remove('hidden');
-            emptyState.classList.add('hidden');
+        }
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                searchBtn.disabled = true;
+                btnText.textContent = '處理中...';
+                loadingIcon.classList.remove('hidden');
+                searchBtn.classList.replace('bg-blue-600', 'bg-blue-400');
+            } else {
+                searchBtn.disabled = false;
+                btnText.textContent = '送出查詢';
+                loadingIcon.classList.add('hidden');
+                searchBtn.classList.replace('bg-blue-400', 'bg-blue-600');
+            }
+        }
+
+        function showMessage(text, type) {
+            messageBox.textContent = text;
+            messageBox.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700', 'bg-yellow-100', 'text-yellow-700');
+            
+            if (type === 'error') {
+                messageBox.classList.add('bg-red-100', 'text-red-700');
+            } else if (type === 'success') {
+                messageBox.classList.add('bg-green-100', 'text-green-700');
+                // 成功訊息自動消失
+                setTimeout(hideMessage, 3000);
+            } else {
+                messageBox.classList.add('bg-yellow-100', 'text-yellow-700');
+            }
+        }
+
+        function hideMessage() {
+            messageBox.classList.add('hidden');
+        }
+
+        function hideResult() {
+            resultContainer.classList.add('hidden');
         }
 
         // 綁定事件
-        submitBtn.addEventListener('click', performSearch);
-        
-        usernameInput.addEventListener('keypress', (e) => {
+        searchBtn.addEventListener('click', performSearch);
+        userNameInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') performSearch();
         });
     </script>
