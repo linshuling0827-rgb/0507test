@@ -3,244 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>會員查詢系統</title>
-    <!-- 引入 Tailwind CSS 以進行快速且美觀的網頁排版 -->
+    <title>會員資料查詢系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 隱藏捲軸但保留捲動功能 (為了表格的響應式設計) */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f3f4f6;
         }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
         }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden { display: none; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen text-gray-800 font-sans p-4 sm:p-8">
-
-    <div class="max-w-5xl mx-auto">
-        <!-- 標題與搜尋區塊 -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 mb-6">
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">會員資料查詢</h1>
-            <p class="text-gray-500 mb-6 text-sm">輸入使用者名稱並點擊查詢，系統將自動向伺服器請求資料。</p>
+<body class="p-4 md:p-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- 查詢卡片 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+            <h1 class="text-2xl font-bold text-gray-800 mb-6">會員資料查詢</h1>
             
-            <form id="searchForm" class="flex flex-col sm:flex-row gap-4">
-                <div class="flex-1">
-                    <label for="usernameInput" class="sr-only">使用者名稱</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                        <input type="text" id="usernameInput" 
-                            class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors" 
-                            placeholder="請輸入使用者名稱 (例如: 陳美玲)">
-                    </div>
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex-grow">
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-1">請輸入使用者名稱</label>
+                    <input type="text" id="username" placeholder="例如：陳美玲" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition">
                 </div>
-                <button type="submit" id="submitBtn" 
-                    class="inline-flex justify-center items-center px-6 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto">
-                    <span>送出查詢</span>
-                </button>
-            </form>
-            
-            <!-- 訊息提示區塊 (錯誤或警告) -->
-            <div id="messageBox" class="hidden mt-4 p-4 rounded-xl text-sm font-medium" role="alert"></div>
-        </div>
-
-        <!-- 載入中動畫 -->
-        <div id="loadingIndicator" class="hidden flex flex-col justify-center items-center py-12">
-            <svg class="animate-spin h-10 w-10 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <p class="text-gray-500 font-medium">正在向 Webhook 請求資料，請稍候...</p>
-        </div>
-
-        <!-- 查詢結果表格區塊 -->
-        <div id="resultContainer" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                <h3 class="text-lg font-medium text-gray-900">查詢結果</h3>
-                <span id="resultCount" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    0 筆資料
-                </span>
+                <div class="flex items-end">
+                    <button id="submitBtn" 
+                        class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded-lg transition transform active:scale-95 flex items-center justify-center">
+                        <span id="btnLoader" class="loader hidden"></span>
+                        <span id="btnText">送出查詢</span>
+                    </button>
+                </div>
             </div>
             
-            <div class="overflow-x-auto no-scrollbar">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50" id="tableHead">
-                        <!-- 表頭將由 JavaScript 動態生成 -->
+            <div id="messageBox" class="mt-4 p-3 rounded-lg hidden"></div>
+        </div>
+
+        <!-- 結果表格 -->
+        <div id="resultContainer" class="bg-white rounded-xl shadow-md overflow-hidden hidden">
+            <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                <h2 class="font-semibold text-gray-700">查詢結果</h2>
+                <span id="rowCount" class="text-xs bg-blue-100 text-blue-700 py-1 px-2 rounded-full font-medium"></span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-600 text-sm uppercase">
+                            <th class="px-6 py-4 font-bold border-b">會員ID</th>
+                            <th class="px-6 py-4 font-bold border-b">姓名</th>
+                            <th class="px-6 py-4 font-bold border-b">英文名</th>
+                            <th class="px-6 py-4 font-bold border-b">性別</th>
+                            <th class="px-6 py-4 font-bold border-b">年齡</th>
+                            <th class="px-6 py-4 font-bold border-b">電話</th>
+                            <th class="px-6 py-4 font-bold border-b">地址</th>
+                        </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200" id="tableBody">
-                        <!-- 表格內容將由 JavaScript 動態生成 -->
+                    <tbody id="resultBody" class="text-gray-700">
+                        <!-- 資料將插入於此 -->
                     </tbody>
                 </table>
             </div>
         </div>
+        
+        <!-- 初始狀態提示 -->
+        <div id="emptyState" class="text-center py-20 text-gray-400">
+            <svg class="w-16 h-16 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <p>請輸入名稱並點擊按鈕開始查詢</p>
+        </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const webhookUrl = 'https://odtxiesb.roamerhost.com/webhook-test/42875d38-e490-4902-9997-04d396d926cf';
+        const WEBHOOK_URL = 'https://odtxiesb.roamerhost.com/webhook/bff377c7-09bc-4f3e-8a99-e797084ad30d';
+        
+        const usernameInput = document.getElementById('username');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnLoader = document.getElementById('btnLoader');
+        const btnText = document.getElementById('btnText');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultBody = document.getElementById('resultBody');
+        const messageBox = document.getElementById('messageBox');
+        const emptyState = document.getElementById('emptyState');
+        const rowCount = document.getElementById('rowCount');
+
+        // 顯示訊息函式
+        function showMessage(text, type = 'error') {
+            messageBox.textContent = text;
+            messageBox.className = `mt-4 p-3 rounded-lg ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
+            messageBox.classList.remove('hidden');
+        }
+
+        // 查詢邏輯
+        async function performSearch() {
+            const username = usernameInput.value.trim();
             
-            // DOM 元素綁定
-            const searchForm = document.getElementById('searchForm');
-            const usernameInput = document.getElementById('usernameInput');
-            const submitBtn = document.getElementById('submitBtn');
-            const messageBox = document.getElementById('messageBox');
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            const resultContainer = document.getElementById('resultContainer');
-            const tableHead = document.getElementById('tableHead');
-            const tableBody = document.getElementById('tableBody');
-            const resultCount = document.getElementById('resultCount');
+            if (!username) {
+                showMessage('請輸入使用者名稱');
+                return;
+            }
 
-            // 處理表單送出事件
-            searchForm.addEventListener('submit', async (e) => {
-                e.preventDefault(); // 阻止表單預設的重整行為
-                
-                const username = usernameInput.value.trim();
-                
-                if (!username) {
-                    showMessage('請輸入使用者名稱！', 'warning');
-                    return;
+            // UI 狀態更新
+            messageBox.classList.add('hidden');
+            submitBtn.disabled = true;
+            btnLoader.classList.remove('hidden');
+            btnText.textContent = '查詢中...';
+
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`伺服器回應錯誤: ${response.status}`);
                 }
 
-                // 初始化 UI 狀態
-                hideMessage();
+                const data = await response.json();
+                displayResults(data);
+
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                showMessage(`查詢失敗：${error.message}`);
                 resultContainer.classList.add('hidden');
-                loadingIndicator.classList.remove('hidden');
-                submitBtn.disabled = true;
+                emptyState.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                btnLoader.classList.add('hidden');
+                btnText.textContent = '送出查詢';
+            }
+        }
 
-                try {
-                    // 將資料改為 URLSearchParams (表單) 格式，避免觸發瀏覽器的 OPTIONS Preflight (預檢請求)
-                    // 這是 n8n Webhook 最常遇到 "Failed to fetch" 阻擋的主因
-                    const formData = new URLSearchParams();
-                    formData.append('username', username);
+        // 渲染結果表格
+        function displayResults(data) {
+            // 清空舊內容
+            resultBody.innerHTML = '';
+            
+            // 判斷回傳資料是否為陣列或單一物件
+            const dataList = Array.isArray(data) ? data : [data];
+            
+            if (dataList.length === 0 || !dataList[0].會員ID) {
+                showMessage('查無相關資料');
+                resultContainer.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
 
-                    // 發送 POST 請求到 Webhook
-                    const response = await fetch(webhookUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: formData
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`伺服器回應錯誤 (狀態碼: ${response.status})`);
-                    }
-
-                    // 解析回傳的 JSON 資料
-                    const data = await response.json();
-                    
-                    // 渲染資料到表格
-                    renderTable(data);
-                    
-                } catch (error) {
-                    console.error('查詢錯誤:', error);
-                    
-                    let errorHint = '提示: 請確認伺服器是否有正確回應。';
-                    if (error.message.includes('Failed to fetch')) {
-                        errorHint = `
-                            <strong>偵測到連線被阻擋 (Failed to fetch)，請確認 n8n 設定：</strong><br>
-                            1. <strong>啟動監聽：</strong>因為您使用的是 <code>/webhook-test/</code>，請務必先在 n8n 點擊紅色的 <strong>「Listen for test event」</strong> 按鈕，再從網頁按下查詢。<br>
-                            2. <strong>CORS 標頭：</strong>請在 n8n 的「Respond to Webhook」節點的 Options 或 Headers 設定中，加入一組 Header：<code>Access-Control-Allow-Origin</code> 值為 <code>*</code>
-                        `;
-                    }
-
-                    showMessage(`查詢失敗：${error.message} <br><div class="text-xs font-normal mt-3 block text-gray-800 bg-white/60 p-3 rounded border border-red-200">${errorHint}</div>`, 'error');
-                } finally {
-                    // 恢復按鈕狀態與隱藏載入動畫
-                    loadingIndicator.classList.add('hidden');
-                    submitBtn.disabled = false;
-                }
+            dataList.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-blue-50 transition border-b border-gray-100';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-mono text-sm text-blue-600">${item.會員ID || '-'}</td>
+                    <td class="px-6 py-4 font-medium">${item.姓名 || '-'}</td>
+                    <td class="px-6 py-4">${item.英文名 || '-'}</td>
+                    <td class="px-6 py-4">
+                        <span class="${item.性別 === '男' ? 'text-blue-500' : 'text-pink-500'} font-bold">
+                            ${item.性別 || '-'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">${item.年齡 || '-'} 歲</td>
+                    <td class="px-6 py-4 text-sm">${item.電話 || '-'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title="${item.地址}">
+                        ${item.地址 || '-'}
+                    </td>
+                `;
+                resultBody.appendChild(row);
             });
 
-            // 渲染表格內容函數
-            function renderTable(data) {
-                // 清空先前的內容
-                tableHead.innerHTML = '';
-                tableBody.innerHTML = '';
+            // 顯示結果面板
+            rowCount.textContent = `找到 ${dataList.length} 筆資料`;
+            resultContainer.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+        }
 
-                // 將資料統一轉換為陣列格式以方便處理 (即使只有一筆)
-                const dataArray = Array.isArray(data) ? data : [data];
-
-                if (dataArray.length === 0 || Object.keys(dataArray[0]).length === 0) {
-                    showMessage('查詢成功，但找不到相符的會員資料。', 'warning');
-                    return;
-                }
-
-                // 取得所有資料鍵值作為表頭
-                // (假設所有的物件都擁有相同的結構，取第一筆資料的 keys)
-                const keys = Object.keys(dataArray[0]);
-
-                // --- 產生表頭 ---
-                const trHead = document.createElement('tr');
-                keys.forEach(key => {
-                    const th = document.createElement('th');
-                    th.scope = 'col';
-                    th.className = 'px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap';
-                    th.textContent = key;
-                    trHead.appendChild(th);
-                });
-                tableHead.appendChild(trHead);
-
-                // --- 產生表格內容 ---
-                dataArray.forEach((row, index) => {
-                    const trBody = document.createElement('tr');
-                    // 偶數列加上淺色背景以提高可讀性
-                    if (index % 2 !== 0) {
-                        trBody.classList.add('bg-gray-50');
-                    }
-                    trBody.classList.add('hover:bg-blue-50', 'transition-colors');
-
-                    keys.forEach(key => {
-                        const td = document.createElement('td');
-                        td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700';
-                        
-                        // 處理可能為 null 或 undefined 的資料
-                        let cellValue = row[key];
-                        if (cellValue === null || cellValue === undefined) {
-                            cellValue = '-';
-                        }
-                        
-                        // 如果有特定欄位需要特殊樣式，可在此判斷，例如性別、ID
-                        if (key === '會員ID') {
-                            td.innerHTML = `<span class="font-mono font-medium text-blue-600">${cellValue}</span>`;
-                        } else {
-                            td.textContent = cellValue;
-                        }
-                        
-                        trBody.appendChild(td);
-                    });
-                    tableBody.appendChild(trBody);
-                });
-
-                // 更新資料筆數並顯示表格區塊
-                resultCount.textContent = `${dataArray.length} 筆資料`;
-                resultContainer.classList.remove('hidden');
-            }
-
-            // 顯示訊息框
-            function showMessage(msg, type = 'error') {
-                messageBox.innerHTML = msg;
-                messageBox.className = 'mt-4 p-4 rounded-xl text-sm font-medium block'; // Reset classes
-                
-                if (type === 'error') {
-                    messageBox.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-                } else if (type === 'warning') {
-                    messageBox.classList.add('bg-yellow-50', 'text-yellow-800', 'border', 'border-yellow-200');
-                }
-                
-                messageBox.classList.remove('hidden');
-            }
-
-            // 隱藏訊息框
-            function hideMessage() {
-                messageBox.classList.add('hidden');
-                messageBox.innerHTML = '';
-            }
+        // 綁定事件
+        submitBtn.addEventListener('click', performSearch);
+        
+        usernameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
         });
     </script>
 </body>
